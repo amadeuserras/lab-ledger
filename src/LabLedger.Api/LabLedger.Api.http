@@ -1,6 +1,1 @@
 @LabLedger.Api_HostAddress = http://localhost:5143
-
-GET {{LabLedger.Api_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
