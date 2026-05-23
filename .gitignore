@@ -1,0 +1,44 @@
+## Build results
+[Bb]in/
+[Oo]bj/
+
+## User-specific / IDE
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## NuGet
+*.nupkg
+**/packages/*
+!**/packages/build/
+
+## .NET
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## Test / coverage
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+## Secrets & local config
+**/appsettings.*.local.json
+secrets.json
+*.pfx
+
+## Database (LabLedger SQLite — Step 6+)
+*.db
+*.db-shm
+*.db-wal
+
+## OS
+.DS_Store
+Thumbs.db
+
+# Docs
+LAB_LEDGER.md
