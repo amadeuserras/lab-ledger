@@ -22,4 +22,30 @@ Content-Type: application/json
 }
 
 ###
-f
+
+@auth_token = <paste token from login response>
+
+### List samples
+GET {{LabLedger.Api_HostAddress}}/api/samples
+Authorization: Bearer {{auth_token}}
+
+###
+
+### Get sample by id
+GET {{LabLedger.Api_HostAddress}}/api/samples/1
+Authorization: Bearer {{auth_token}}
+
+###
+
+### Create sample
+POST {{LabLedger.Api_HostAddress}}/api/samples
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "name": "Blood Panel A",
+  "type": "Blood",
+  "origin": "Clinic North"
+}
+
+###

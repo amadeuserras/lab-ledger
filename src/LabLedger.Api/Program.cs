@@ -1,6 +1,7 @@
 using System.Text;
 using LabLedger.Api.Authorization;
 using LabLedger.Application.Features.Auth;
+using LabLedger.Application.Features.Samples;
 using LabLedger.Core.Interfaces;
 using LabLedger.DataModel;
 using LabLedger.DataModel.Repositories;
@@ -17,6 +18,7 @@ builder.Services.AddDbContext<LabLedgerDbContext>(options =>
 builder.Services.AddScoped<IUnitOfWork, EFUnitOfWork>();
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.AddScoped<IAuthComponent, AuthComponent>();
+builder.Services.AddScoped<ISampleComponent, SampleComponent>();
 
 var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()
     ?? throw new InvalidOperationException("Jwt configuration is missing.");
