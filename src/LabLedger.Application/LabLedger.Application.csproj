@@ -2,6 +2,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\LabLedger.Core\LabLedger.Core.csproj" />
+    <ProjectReference Include="..\LabLedger.DataModel\LabLedger.DataModel.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.18.0" />
   </ItemGroup>
 
   <PropertyGroup>

@@ -1,1 +1,25 @@
 @LabLedger.Api_HostAddress = http://localhost:5143
+
+### Register
+POST {{LabLedger.Api_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "scientist@lab.com",
+  "password": "Password123!",
+  "fullName": "Ada Scientist"
+}
+
+###
+
+### Login
+POST {{LabLedger.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "scientist@lab.com",
+  "password": "Password123!"
+}
+
+###
+f
