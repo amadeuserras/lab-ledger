@@ -2,7 +2,9 @@ using System.Text;
 using FluentValidation;
 using LabLedger.Api.Authorization;
 using LabLedger.Application.Features.Auth;
+using LabLedger.Application.Features.Results;
 using LabLedger.Application.Features.Samples;
+using LabLedger.Application.Features.Tests;
 using LabLedger.Core.Interfaces;
 using LabLedger.DataModel;
 using LabLedger.DataModel.Repositories;
@@ -20,6 +22,8 @@ builder.Services.AddScoped<IUnitOfWork, EFUnitOfWork>();
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.AddScoped<IAuthComponent, AuthComponent>();
 builder.Services.AddScoped<ISampleComponent, SampleComponent>();
+builder.Services.AddScoped<ITestComponent, TestComponent>();
+builder.Services.AddScoped<IResultComponent, ResultComponent>();
 builder.Services.AddValidatorsFromAssemblyContaining<SampleValidator>();
 
 var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()

@@ -4,6 +4,7 @@ using FluentValidation;
 using LabLedger.Api.Authorization;
 using LabLedger.Application.Features.Auth;
 using LabLedger.Application.Features.Samples;
+using LabLedger.Application.Features.Tests;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,8 +16,13 @@ namespace LabLedger.Api.Controllers;
 public class SamplesController : ControllerBase
 {
     private readonly ISampleComponent _samples;
+    private readonly ITestComponent _tests;
 
-    public SamplesController(ISampleComponent samples) => _samples = samples;
+    public SamplesController(ISampleComponent samples, ITestComponent tests)
+    {
+        _samples = samples;
+        _tests = tests;
+    }
 
     [HttpGet]
     [RequirePermission(Permissions.SamplesRead)]
@@ -67,6 +73,27 @@ public class SamplesController : ControllerBase
             return NotFound();
 
         return Ok(sample);
+    }
+
+    [HttpPost("{id:int}/tests")]
+    [RequirePermission(Permissions.TestsWrite)]
+    public async Task<ActionResult<TestDto>> CreateTest(
+        int id,
+        [FromBody] CreateTestRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var test = await _tests.CreateAsync(id, request, cancellationToken);
+            if (test is null)
+                return NotFound();
+
+            return CreatedAtAction(nameof(CreateTest), new { id = test.Id }, test);
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(ex.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
+        }
     }
 
     private int GetCurrentUserId()

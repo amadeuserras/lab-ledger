@@ -58,3 +58,61 @@ Content-Type: application/json
 {
   "status": 1
 }
+
+###
+
+### Create test for sample
+POST {{LabLedger.Api_HostAddress}}/api/samples/1/tests
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "method": "PCR"
+}
+
+###
+
+### Assign test to technician
+PATCH {{LabLedger.Api_HostAddress}}/api/tests/1/assign
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "assignedToId": 1
+}
+
+###
+
+### Update test status
+PATCH {{LabLedger.Api_HostAddress}}/api/tests/1/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": 1
+}
+
+###
+
+### Record test result
+POST {{LabLedger.Api_HostAddress}}/api/tests/1/result
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "value": "Negative",
+  "unit": "qualitative",
+  "notes": "No markers detected"
+}
+
+###
+
+### Get result
+GET {{LabLedger.Api_HostAddress}}/api/results/1
+Authorization: Bearer {{token}}
+
+###
+
+### Publish result
+PATCH {{LabLedger.Api_HostAddress}}/api/results/1/publish
+Authorization: Bearer {{token}}
