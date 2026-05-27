@@ -1,20 +1,120 @@
-# Lab Ledger
+# Lab Ledger 🧪
 
-Laboratory sample and test results API (.NET 8).
+Lab Ledger is a system for tracking **lab samples**, the **tests** you run on them, and the **results** you record — with **role-based access**, so different users can do different things.
 
-## Prerequisites
+If you’ve ever had sample info spread across emails, spreadsheets, and sticky notes, this is meant to replace that with one clear source of truth.
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+## What you can do with it
 
-Restore local CLI tools (Entity Framework) once after cloning:
+- **Track samples**: what they are, where they came from, and their current status.
+- **Run tests**: attach one or more tests to a sample and track progress.
+- **Record results**: store the measured value, unit, and whether the result is published.
+- **Control access**: different roles can do different things (see below).
 
-```bash
-dotnet tool restore
+## Data model
+
+- **`Users`** – `email`, `fullName`, `role`
+- **`Samples`** – `name`, `type`, `origin`, `status`, `submittedById`
+- **`Tests`** – `method`, `status`, `sampleId`, `assignedToId`
+- **`Results`** – `testId`, `value`, `unit`, `isPublished`, `recordedById`, `publishedById`
+
+## Roles
+
+| Role         | What they can do                               |
+| ------------ | ---------------------------------------------- |
+| `Scientist`  | Work with samples (view, create, update)       |
+| `Technician` | Work with tests and results (and view samples) |
+| `Supervisor` | Do almost everything (but not manage users)    |
+| `Admin`      | Do everything, including user management       |
+
+## Endpoints
+
+Lab Ledger offers the same data in two ways:
+
+- **REST API**: regular HTTP endpoints like `GET /api/samples`
+- **GraphQL**: available at `/graphql`, powered by **GraphQL** + **Hot Chocolate**
+
+Most endpoints require you to be logged in. You log in once, then send the token with each request like so: `Authorization: Bearer <your-token>`
+
+- Register a user: `POST /api/auth/register`
+- Log in (get a token): `POST /api/auth/login`
+- List all samples: `GET /api/samples`
+- Get one sample: `GET /api/samples/{id}`
+- Create a sample: `POST /api/samples`
+- Update a sample’s status: `PATCH /api/samples/{id}/status`
+- Create a test for a sample: `POST /api/samples/{id}/tests`
+- Assign a test to someone: `PATCH /api/tests/{id}/assign`
+- Update a test’s status: `PATCH /api/tests/{id}/status`
+- Record a result for a test: `POST /api/tests/{id}/result`
+- View a result: `GET /api/results/{id}`
+- Publish a result: `PATCH /api/results/{id}/publish`
+
+### GraphQL
+
+GraphQL is available at:
+
+- `POST /graphql`
+
+In development, Hot Chocolate also provides a browser UI at:
+
+- `GET /graphql`
+
+Example: query samples (optionally filter by status):
+
+```graphql
+query {
+  samples(status: Submitted) {
+    id
+    name
+    status
+  }
+}
 ```
 
-## Commands
+## Tests
 
-Run these from the repository root.
+This project has **31 automated tests** (unit + integration).
+
+- **How integration tests work**: the API is spun up in-memory using `Microsoft.AspNetCore.Mvc.Testing`, then tests call the real HTTP endpoints (and GraphQL) like a client would.
+- **What’s covered**: authentication (`/api/auth/*`), samples (`/api/samples/*`), tests + results (`/api/tests/*`, `/api/results/*`), GraphQL samples queries (`/graphql`), and global error handling.
+- **Coverage**: code coverage is collected with Coverlet.
+
+## Tech stack (with versions)
+
+| Area              | Technology                                                               |
+| ----------------- | ------------------------------------------------------------------------ |
+| Runtime           | .NET 8 (`net8.0`)                                                        |
+| Web API           | ASP.NET Core                                                             |
+| Auth              | JWT Bearer auth (`Microsoft.AspNetCore.Authentication.JwtBearer` 8.0.11) |
+| Database          | SQLite                                                                   |
+| ORM / data access | Entity Framework Core (`Microsoft.EntityFrameworkCore.Sqlite` 8.0.11)    |
+| GraphQL           | Hot Chocolate 16.0.9                                                     |
+| Validation        | FluentValidation (API: 11.3.1, Application: 12.1.1)                      |
+| API docs          | Swagger / Swashbuckle 6.6.2                                              |
+| Mapping           | Mapster 10.0.7                                                           |
+| Password hashing  | BCrypt.Net-Next 4.2.0                                                    |
+| Testing           | xUnit 2.5.3, FluentAssertions 8.2.0, Moq 4.20.72                         |
+| Test hosting      | `Microsoft.AspNetCore.Mvc.Testing` 8.0.11                                |
+| Coverage          | `coverlet.collector` 6.0.0                                               |
+
+## Project layout
+
+| Path                        | What it is                      |
+| --------------------------- | ------------------------------- |
+| `LabLedger.sln`             | Main solution file              |
+| `src/LabLedger.Api`         | The web API (the thing you run) |
+| `src/LabLedger.Application` | Application logic               |
+| `src/LabLedger.Core`        | Core domain interfaces          |
+| `src/LabLedger.DataModel`   | Database model + migrations     |
+| `tests/LabLedger.Tests`     | Automated tests                 |
+
+## Quickstart
+
+Run these commands from the repository root.
+
+### Prerequisites
+
+Install the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 
 ### Build
 
@@ -22,14 +122,12 @@ Run these from the repository root.
 dotnet build
 ```
 
-### Tests
+### Create/update the local database
+
+Do this on first run, and again after schema changes:
 
 ```bash
-# All tests
-dotnet test
-
-# Single test class or method (adjust the filter)
-dotnet test --filter "FullyQualifiedName~AuthControllerTests"
+dotnet ef database update --project src/LabLedger.DataModel --startup-project src/LabLedger.Api
 ```
 
 ### Run the API
@@ -38,76 +136,35 @@ dotnet test --filter "FullyQualifiedName~AuthControllerTests"
 dotnet run --project src/LabLedger.Api
 ```
 
-In Development, Swagger is at [http://localhost:5143/swagger](http://localhost:5143/swagger) (see `src/LabLedger.Api/Properties/launchSettings.json` for URLs and profiles).
+### Visit the API docs (Swagger)
 
-Apply migrations before the first local run (SQLite file `labledger.db` in the API project directory):
+Once the API is running, open:
+
+- `http://localhost:5143/swagger`
+
+### Visit GraphQL (optional)
+
+Hot Chocolate GraphQL endpoint + dev UI:
+
+- `POST /graphql`
+- `GET /graphql`
+
+### Run the tests
+
+Run everything:
 
 ```bash
-dotnet ef database update --project src/LabLedger.DataModel --startup-project src/LabLedger.Api
+dotnet test
 ```
 
-### Database migrations
+Run a single test class or method (adjust the filter):
 
 ```bash
-# Add a migration
+dotnet test --filter "FullyQualifiedName~AuthControllerTests"
+```
+
+### Create a migration (when you change the data model)
+
+```bash
 dotnet ef migrations add <MigrationName> --project src/LabLedger.DataModel --startup-project src/LabLedger.Api
-
-# Apply migrations
-dotnet ef database update --project src/LabLedger.DataModel --startup-project src/LabLedger.Api
 ```
-
-## Database
-
-This API uses **SQLite** and **EF Core**. The initial schema has 4 tables: `Users`, `Samples`, `Tests`, `Results`.
-
-## Roles
-
-Authorization is permission-based. At login, the API issues a JWT that includes the user’s role and derived permissions.
-
-| Role | Permissions (what they can do) |
-| --- | --- |
-| `Scientist` | Read + create/update samples (`Samples:Read`, `Samples:Write`) |
-| `Technician` | Read samples, create/update tests, assign tests, create results (`Samples:Read`, `Tests:Write`, `Tests:Assign`, `Results:Write`) |
-| `Supervisor` | Everything **except** manage users (all permissions minus `Users:Manage`) |
-| `Admin` | Everything, including user management (all permissions) |
-
-### Example placeholder data
-
-#### `Users`
-
-| Id | Email | FullName | Role |
-| --- | --- | --- | --- |
-| 1 | `admin@example.com` | `Alex Admin` | `Admin` |
-| 2 | `tech@example.com` | `Taylor Tech` | `Tech` |
-
-#### `Samples`
-
-| Id | Name | Type | Origin | Status | SubmittedById |
-| --- | --- | --- | --- | --- | --- |
-| 100 | `River Water A` | `Water` | `Site 12` | `Submitted` | 2 |
-| 101 | `Soil Core B` | `Soil` | `Field 3` | `InProgress` | 2 |
-
-#### `Tests`
-
-| Id | Method | Status | SampleId | AssignedToId |
-| --- | --- | --- | --- | --- |
-| 500 | `pH (Electrode)` | `Done` | 100 | 2 |
-| 501 | `Nitrate (IC)` | `Running` | 100 | 2 |
-
-#### `Results`
-
-| Id | TestId | Value | Unit | IsPublished | RecordedById | PublishedById |
-| --- | --- | --- | --- | --- | --- | --- |
-| 900 | 500 | `7.12` | `pH` | true | 2 | 1 |
-| 901 | 501 | `14.8` | `mg/L` | false | 2 |  |
-
-## Solution layout
-
-| Path                        | Purpose                                 |
-| --------------------------- | --------------------------------------- |
-| `LabLedger.sln`             | Solution entry point                    |
-| `src/LabLedger.Api`         | HTTP API and controllers                |
-| `src/LabLedger.Application` | Application services and DTOs           |
-| `src/LabLedger.Core`        | Domain interfaces                       |
-| `src/LabLedger.DataModel`   | EF Core entities, DbContext, migrations |
-| `tests/LabLedger.Tests`     | Unit and integration tests (xUnit)      |
