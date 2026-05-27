@@ -79,7 +79,7 @@ This project has **31 automated tests** (unit + integration).
 - **What’s covered**: authentication (`/api/auth/*`), samples (`/api/samples/*`), tests + results (`/api/tests/*`, `/api/results/*`), GraphQL samples queries (`/graphql`), and global error handling.
 - **Coverage**: code coverage is collected with Coverlet.
 
-## Tech stack (with versions)
+## Tech stack
 
 | Area              | Technology                                                               |
 | ----------------- | ------------------------------------------------------------------------ |
@@ -142,7 +142,7 @@ Once the API is running, open:
 
 - `http://localhost:5143/swagger`
 
-### Visit GraphQL (optional)
+### Visit GraphQL
 
 Hot Chocolate GraphQL endpoint + dev UI:
 
