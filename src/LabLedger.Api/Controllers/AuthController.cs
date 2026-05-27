@@ -18,15 +18,8 @@ public class AuthController : ControllerBase
         [FromBody] RegisterRequest request,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var response = await _auth.RegisterAsync(request, cancellationToken);
-            return CreatedAtAction(nameof(Register), response);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { message = ex.Message });
-        }
+        var response = await _auth.RegisterAsync(request, cancellationToken);
+        return CreatedAtAction(nameof(Register), response);
     }
 
     [HttpPost("login")]
@@ -36,7 +29,12 @@ public class AuthController : ControllerBase
     {
         var response = await _auth.LoginAsync(request, cancellationToken);
         if (response is null)
-            return Unauthorized(new { message = "Invalid email or password." });
+        {
+            return Problem(
+                statusCode: StatusCodes.Status401Unauthorized,
+                title: "Unauthorized",
+                detail: "Invalid email or password.");
+        }
 
         return Ok(response);
     }

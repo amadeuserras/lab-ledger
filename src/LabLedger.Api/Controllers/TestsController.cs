@@ -1,7 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using FluentValidation;
 using LabLedger.Api.Authorization;
+using LabLedger.Api.Extensions;
 using LabLedger.Application.Features.Auth;
 using LabLedger.Application.Features.Results;
 using LabLedger.Application.Features.Tests;
@@ -31,18 +31,11 @@ public class TestsController : ControllerBase
         [FromBody] AssignTestRequest request,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var test = await _tests.AssignAsync(id, request, cancellationToken);
-            if (test is null)
-                return NotFound();
+        var test = await _tests.AssignAsync(id, request, cancellationToken);
+        if (test is null)
+            return this.NotFoundProblem();
 
-            return Ok(test);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { message = ex.Message });
-        }
+        return Ok(test);
     }
 
     [HttpPatch("{id:int}/status")]
@@ -54,7 +47,7 @@ public class TestsController : ControllerBase
     {
         var test = await _tests.UpdateStatusAsync(id, request.Status, cancellationToken);
         if (test is null)
-            return NotFound();
+            return this.NotFoundProblem();
 
         return Ok(test);
     }
@@ -66,23 +59,12 @@ public class TestsController : ControllerBase
         [FromBody] CreateResultRequest request,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var userId = GetCurrentUserId();
-            var result = await _results.CreateAsync(id, request, userId, cancellationToken);
-            if (result is null)
-                return NotFound();
+        var userId = GetCurrentUserId();
+        var result = await _results.CreateAsync(id, request, userId, cancellationToken);
+        if (result is null)
+            return this.NotFoundProblem();
 
-            return CreatedAtRoute("GetResult", new { id = result.Id }, result);
-        }
-        catch (ValidationException ex)
-        {
-            return BadRequest(ex.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { message = ex.Message });
-        }
+        return CreatedAtRoute("GetResult", new { id = result.Id }, result);
     }
 
     private int GetCurrentUserId()

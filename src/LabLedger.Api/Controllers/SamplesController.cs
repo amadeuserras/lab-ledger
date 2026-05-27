@@ -1,7 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using FluentValidation;
 using LabLedger.Api.Authorization;
+using LabLedger.Api.Extensions;
 using LabLedger.Application.Features.Auth;
 using LabLedger.Application.Features.Samples;
 using LabLedger.Application.Features.Tests;
@@ -38,7 +38,7 @@ public class SamplesController : ControllerBase
     {
         var sample = await _samples.GetByIdAsync(id, cancellationToken);
         if (sample is null)
-            return NotFound();
+            return this.NotFoundProblem();
 
         return Ok(sample);
     }
@@ -49,16 +49,9 @@ public class SamplesController : ControllerBase
         [FromBody] CreateSampleRequest request,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var userId = GetCurrentUserId();
-            var sample = await _samples.CreateAsync(request, userId, cancellationToken);
-            return CreatedAtAction(nameof(GetById), new { id = sample.Id }, sample);
-        }
-        catch (ValidationException ex)
-        {
-            return BadRequest(ex.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
-        }
+        var userId = GetCurrentUserId();
+        var sample = await _samples.CreateAsync(request, userId, cancellationToken);
+        return CreatedAtAction(nameof(GetById), new { id = sample.Id }, sample);
     }
 
     [HttpPatch("{id:int}/status")]
@@ -70,7 +63,7 @@ public class SamplesController : ControllerBase
     {
         var sample = await _samples.UpdateStatusAsync(id, request.Status, cancellationToken);
         if (sample is null)
-            return NotFound();
+            return this.NotFoundProblem();
 
         return Ok(sample);
     }
@@ -82,18 +75,11 @@ public class SamplesController : ControllerBase
         [FromBody] CreateTestRequest request,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var test = await _tests.CreateAsync(id, request, cancellationToken);
-            if (test is null)
-                return NotFound();
+        var test = await _tests.CreateAsync(id, request, cancellationToken);
+        if (test is null)
+            return this.NotFoundProblem();
 
-            return CreatedAtAction(nameof(CreateTest), new { id = test.Id }, test);
-        }
-        catch (ValidationException ex)
-        {
-            return BadRequest(ex.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
-        }
+        return CreatedAtAction(nameof(CreateTest), new { id = test.Id }, test);
     }
 
     private int GetCurrentUserId()

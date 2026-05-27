@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using LabLedger.Api.Authorization;
+using LabLedger.Api.Extensions;
 using LabLedger.Application.Features.Auth;
 using LabLedger.Application.Features.Results;
 using Microsoft.AspNetCore.Authorization;
@@ -23,7 +24,7 @@ public class ResultsController : ControllerBase
     {
         var result = await _results.GetByIdAsync(id, cancellationToken);
         if (result is null)
-            return NotFound();
+            return this.NotFoundProblem();
 
         return Ok(result);
     }
@@ -32,19 +33,12 @@ public class ResultsController : ControllerBase
     [RequirePermission(Permissions.ResultsPublish)]
     public async Task<ActionResult<ResultDto>> Publish(int id, CancellationToken cancellationToken)
     {
-        try
-        {
-            var userId = GetCurrentUserId();
-            var result = await _results.PublishAsync(id, userId, cancellationToken);
-            if (result is null)
-                return NotFound();
+        var userId = GetCurrentUserId();
+        var result = await _results.PublishAsync(id, userId, cancellationToken);
+        if (result is null)
+            return this.NotFoundProblem();
 
-            return Ok(result);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { message = ex.Message });
-        }
+        return Ok(result);
     }
 
     private int GetCurrentUserId()
