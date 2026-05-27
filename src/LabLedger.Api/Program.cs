@@ -1,6 +1,7 @@
 using System.Text;
 using FluentValidation;
 using LabLedger.Api.Authorization;
+using LabLedger.Api.Exceptions;
 using LabLedger.Api.GraphQL;
 using LabLedger.Api.GraphQL.DataLoaders;
 using LabLedger.Application.Features.Auth;
@@ -59,6 +60,8 @@ builder.Services.AddAuthorization(options =>
     }
 });
 
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -83,6 +86,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseExceptionHandler();
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
