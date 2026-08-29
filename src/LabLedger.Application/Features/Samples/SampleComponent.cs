@@ -2,6 +2,7 @@ using FluentValidation;
 using LabLedger.Core.Interfaces;
 using LabLedger.DataModel.Entities;
 using Mapster;
+using Microsoft.EntityFrameworkCore;
 
 namespace LabLedger.Application.Features.Samples;
 
@@ -18,12 +19,12 @@ public class SampleComponent : ISampleComponent
 
     public async Task<IReadOnlyList<SampleDto>> GetAllAsync(SampleStatus? status, CancellationToken cancellationToken = default)
     {
-        var samples = await _unitOfWork.GetRepository<Sample>().GetAllAsync();
+        var query = _unitOfWork.GetRepository<Sample>().Query();
 
-        if (status is not null) {
-            samples = samples.Where(s => s.Status == status).ToList();
-        }
+        if (status is not null) 
+            query = query.Where(s => s.Status == status);
         
+        var samples = await query.ToListAsync(cancellationToken);
         return samples.Adapt<List<SampleDto>>();
     }
 
