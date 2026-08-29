@@ -15,6 +15,9 @@ public class EFRepository<T> : IRepository<T> where T : class
     public async Task<T?> GetByIdAsync(int id) =>
         await _dbSet.FindAsync(id);
 
+    public IQueryable<T> Query() =>
+        _dbSet.AsQueryable();
+
     public async Task<IReadOnlyList<T>> GetAllAsync() =>
         await _dbSet.ToListAsync();
 
