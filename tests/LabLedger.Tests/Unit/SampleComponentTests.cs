@@ -19,6 +19,34 @@ public class SampleComponentTests
     }
 
     [Fact]
+    public async Task GetAllAsync_WithStatusFilter_ReturnsMatchingSamplesOnly()
+    {
+        _sampleRepository.Setup(r => r.GetAllAsync()).ReturnsAsync(CreateSamples());
+
+        var component = new SampleComponent(_unitOfWork.Object, _validator);
+        var result = await component.GetAllAsync(SampleStatus.Submitted);
+
+        result.Should().ContainSingle();
+        result[0].Id.Should().Be(1);
+        result[0].Status.Should().Be(SampleStatus.Submitted);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithoutStatus_ReturnsAllSamples()
+    {
+        _sampleRepository.Setup(r => r.GetAllAsync()).ReturnsAsync(CreateSamples());
+
+        var component = new SampleComponent(_unitOfWork.Object, _validator);
+        var result = await component.GetAllAsync(null);
+
+        result.Should().HaveCount(2);
+        result[0].Id.Should().Be(1);
+        result[0].Status.Should().Be(SampleStatus.Submitted);
+        result[1].Id.Should().Be(2);
+        result[1].Status.Should().Be(SampleStatus.InProgress);
+    }
+
+    [Fact]
     public async Task CreateAsync_ValidRequest_PersistsSample()
     {
         Sample? savedSample = null;
@@ -133,4 +161,24 @@ public class SampleComponentTests
         result.Should().BeNull();
         _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
+
+    private static List<Sample> CreateSamples() =>
+    [
+        new Sample
+        {
+            Id = 1,
+            Name = "Submitted Sample",
+            Type = "Blood",
+            Origin = "Clinic 1",
+            Status = SampleStatus.Submitted,
+        },
+        new Sample
+        {
+            Id = 2,
+            Name = "In Progress Sample",
+            Type = "Tissue",
+            Origin = "Clinic 2",
+            Status = SampleStatus.InProgress,
+        },
+    ];
 }

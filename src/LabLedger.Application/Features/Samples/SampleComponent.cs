@@ -16,16 +16,21 @@ public class SampleComponent : ISampleComponent
         _validator = validator;
     }
 
-    public async Task<IReadOnlyList<SampleDto>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<SampleDto>> GetAllAsync(SampleStatus? status, CancellationToken cancellationToken = default)
     {
         var samples = await _unitOfWork.GetRepository<Sample>().GetAllAsync();
+
+        if (status is not null) {
+            samples = samples.Where(s => s.Status == status).ToList();
+        }
+        
         return samples.Adapt<List<SampleDto>>();
     }
 
     public async Task<SampleDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var sample = await _unitOfWork.GetRepository<Sample>().GetByIdAsync(id);
-        return sample?.Adapt<SampleDto>();
+        return sample.Adapt<SampleDto>();
     }
 
     public async Task<SampleDto> CreateAsync(

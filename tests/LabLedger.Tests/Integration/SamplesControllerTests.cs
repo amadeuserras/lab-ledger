@@ -31,6 +31,35 @@ public class SamplesControllerTests(LabLedgerWebApplicationFactory factory) : In
     }
 
     [Fact]
+    public async Task GetAll_WithStatusFilter_ReturnsMatchingSamplesOnly()
+    {
+        var token = await RegisterAndLoginAsync("samples-reader@lab.test");
+        Authenticate(token);
+
+        await Client.PostAsJsonAsync(
+            "/api/samples",
+            new CreateSampleRequest("Submitted Sample", "Blood", "Clinic 1"));
+        
+        var inProgressResponse = await Client.PostAsJsonAsync(
+            "/api/samples",
+            new CreateSampleRequest("In Progress Sample", "Tissue", "Clinic 2"));
+        var inProgress = await inProgressResponse.Content.ReadFromJsonAsync<SampleDto>();
+
+        await Client.PatchAsJsonAsync(
+            $"/api/samples/{inProgress!.Id}/status",
+            new UpdateSampleStatusRequest(SampleStatus.InProgress));
+
+        var response = await Client.GetAsync($"/api/samples?status=InProgress");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var samples = await response.Content.ReadFromJsonAsync<List<SampleDto>>();
+        samples.Should().NotBeNull();
+        samples!.Count.Should().Be(1);
+        samples![0].Id.Should().Be(inProgress!.Id);
+        samples![0].Status.Should().Be(SampleStatus.InProgress);
+    }
+
+    [Fact]
     public async Task CreateSample_ReturnsCreated()
     {
         var token = await RegisterAndLoginAsync("sample-creator@lab.test");

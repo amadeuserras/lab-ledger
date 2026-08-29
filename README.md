@@ -38,7 +38,7 @@ Most endpoints require you to be logged in. You log in once, then send the token
 
 - Register a user: `POST /api/auth/register`
 - Log in (get a token): `POST /api/auth/login`
-- List all samples: `GET /api/samples`
+- List samples: `GET /api/samples` (optional `?status=InProgress`)
 - Get one sample: `GET /api/samples/{id}`
 - Create a sample: `POST /api/samples`
 - Update a sample’s status: `PATCH /api/samples/{id}/status`

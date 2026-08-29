@@ -26,9 +26,9 @@ public class SamplesController : ControllerBase
 
     [HttpGet]
     [RequirePermission(Permissions.SamplesRead)]
-    public async Task<ActionResult<IReadOnlyList<SampleDto>>> GetAll(CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyList<SampleDto>>> GetAll(SampleStatus? status, CancellationToken cancellationToken)
     {
-        var samples = await _samples.GetAllAsync(cancellationToken);
+        var samples = await _samples.GetAllAsync(status, cancellationToken);
         return Ok(samples);
     }
 
