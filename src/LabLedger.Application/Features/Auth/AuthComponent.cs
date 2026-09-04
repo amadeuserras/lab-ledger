@@ -5,6 +5,7 @@ using LabLedger.Core.Interfaces;
 using LabLedger.DataModel.Entities;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.EntityFrameworkCore;
 
 namespace LabLedger.Application.Features.Auth;
 
@@ -24,10 +25,11 @@ public class AuthComponent : IAuthComponent
         CancellationToken cancellationToken = default)
     {
         var userRepo = _unitOfWork.GetRepository<User>();
-        var users = await userRepo.GetAllAsync();
+        var query = userRepo.Query();
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        bool emailExists = await query.AnyAsync(u => u.Email == normalizedEmail, cancellationToken);
 
-        if (users.Any(u => u.Email.Equals(normalizedEmail, StringComparison.OrdinalIgnoreCase)))
+        if (emailExists)
             throw new InvalidOperationException("A user with this email already exists.");
 
         var user = new User
@@ -38,7 +40,7 @@ public class AuthComponent : IAuthComponent
             Role = UserRole.Scientist,
             CreatedAt = DateTime.UtcNow
         };
-
+            
         await userRepo.AddAsync(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -50,9 +52,9 @@ public class AuthComponent : IAuthComponent
         CancellationToken cancellationToken = default)
     {
         var userRepo = _unitOfWork.GetRepository<User>();
-        var users = await userRepo.GetAllAsync();
-        var user = users.FirstOrDefault(u =>
-            u.Email.Equals(request.Email.Trim(), StringComparison.OrdinalIgnoreCase));
+        var query = userRepo.Query();
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        var user = await query.SingleOrDefaultAsync(u => u.Email == normalizedEmail, cancellationToken);
 
         if (user is null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             return null;
