@@ -2,6 +2,7 @@ using FluentValidation;
 using LabLedger.Core.Interfaces;
 using LabLedger.DataModel.Entities;
 using Mapster;
+using Microsoft.EntityFrameworkCore;
 
 namespace LabLedger.Application.Features.Results;
 
@@ -34,8 +35,9 @@ public class ResultComponent : IResultComponent
         if (test is null)
             return null;
 
-        var results = await _unitOfWork.GetRepository<Result>().GetAllAsync();
-        if (results.Any(r => r.TestId == testId))
+        var resultQuery = _unitOfWork.GetRepository<Result>().Query();
+        bool testHasResult = await resultQuery.AnyAsync(r => r.TestId == testId, cancellationToken);
+        if (testHasResult)
             throw new InvalidOperationException("This test already has a result.");
 
         var result = new Result
