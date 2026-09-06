@@ -1,96 +1,81 @@
 using FluentAssertions;
 using FluentValidation;
 using LabLedger.Application.Features.Samples;
-using LabLedger.Core.Interfaces;
+using LabLedger.DataModel;
 using LabLedger.DataModel.Entities;
-using Moq;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 
 namespace LabLedger.Tests.Unit;
 
-public class SampleComponentTests
+public class SampleComponentTests : IDisposable
 {
-    private readonly Mock<IUnitOfWork> _unitOfWork = new();
-    private readonly Mock<IRepository<Sample>> _sampleRepository = new();
+    private readonly SqliteConnection _connection;
+    private readonly LabLedgerDbContext _context;
     private readonly IValidator<CreateSampleRequest> _validator = new SampleValidator();
 
     public SampleComponentTests()
     {
-        _unitOfWork.Setup(u => u.GetRepository<Sample>()).Returns(_sampleRepository.Object);
+        _connection = new SqliteConnection("Data Source=:memory:");
+        _connection.Open();
+
+        var options = new DbContextOptionsBuilder<LabLedgerDbContext>()
+            .UseSqlite(_connection)
+            .Options;
+
+        _context = new LabLedgerDbContext(options);
+        _context.Database.EnsureCreated();
     }
 
     [Fact]
     public async Task CreateAsync_ValidRequest_PersistsSample()
     {
-        Sample? savedSample = null;
-        _sampleRepository
-            .Setup(r => r.AddAsync(It.IsAny<Sample>()))
-            .Callback<Sample>(s => savedSample = s)
-            .Returns(Task.CompletedTask);
-        _unitOfWork
-            .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(1);
-
-        var component = new SampleComponent(_unitOfWork.Object, _validator);
+        var user = SeedUser();
+        var component = new SampleComponent(_context, _validator);
         var request = new CreateSampleRequest("Blood Panel", "Blood", "Clinic 1");
 
-        var result = await component.CreateAsync(request, submittedById: 7);
+        var result = await component.CreateAsync(request, submittedById: user.Id);
 
-        savedSample.Should().NotBeNull();
-        savedSample!.Name.Should().Be("Blood Panel");
+        var savedSample = await _context.Samples.SingleAsync();
+        savedSample.Name.Should().Be("Blood Panel");
         savedSample.Type.Should().Be("Blood");
         savedSample.Origin.Should().Be("Clinic 1");
         savedSample.Status.Should().Be(SampleStatus.Submitted);
-        savedSample.SubmittedById.Should().Be(7);
+        savedSample.SubmittedById.Should().Be(user.Id);
 
         result.Name.Should().Be("Blood Panel");
-        result.SubmittedById.Should().Be(7);
-
-        _sampleRepository.Verify(r => r.AddAsync(It.IsAny<Sample>()), Times.Once);
-        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        result.SubmittedById.Should().Be(user.Id);
     }
 
     [Fact]
     public async Task CreateAsync_InvalidRequest_ThrowsValidationException()
     {
-        var component = new SampleComponent(_unitOfWork.Object, _validator);
+        var component = new SampleComponent(_context, _validator);
         var request = new CreateSampleRequest("", "Blood", "Clinic 1");
 
         var act = () => component.CreateAsync(request, submittedById: 1);
 
         await act.Should().ThrowAsync<ValidationException>();
-        _sampleRepository.Verify(r => r.AddAsync(It.IsAny<Sample>()), Times.Never);
+        (await _context.Samples.CountAsync()).Should().Be(0);
     }
 
     [Fact]
     public async Task GetByIdAsync_ExistingSample_ReturnsDto()
     {
-        var sample = new Sample
-        {
-            Id = 3,
-            Name = "Tissue Sample",
-            Type = "Tissue",
-            Origin = "Lab B",
-            Status = SampleStatus.Submitted,
-            SubmittedById = 2,
-            CreatedAt = DateTime.UtcNow
-        };
+        var sample = SeedSample("Tissue Sample", "Tissue", "Lab B");
+        var component = new SampleComponent(_context, _validator);
 
-        _sampleRepository.Setup(r => r.GetByIdAsync(3)).ReturnsAsync(sample);
-
-        var component = new SampleComponent(_unitOfWork.Object, _validator);
-        var result = await component.GetByIdAsync(3);
+        var result = await component.GetByIdAsync(sample.Id);
 
         result.Should().NotBeNull();
-        result!.Id.Should().Be(3);
+        result!.Id.Should().Be(sample.Id);
         result.Name.Should().Be("Tissue Sample");
     }
 
     [Fact]
     public async Task GetByIdAsync_MissingSample_ReturnsNull()
     {
-        _sampleRepository.Setup(r => r.GetByIdAsync(99)).ReturnsAsync((Sample?)null);
-
-        var component = new SampleComponent(_unitOfWork.Object, _validator);
+        var component = new SampleComponent(_context, _validator);
         var result = await component.GetByIdAsync(99);
 
         result.Should().BeNull();
@@ -99,38 +84,63 @@ public class SampleComponentTests
     [Fact]
     public async Task UpdateStatusAsync_ExistingSample_UpdatesStatus()
     {
-        var sample = new Sample
-        {
-            Id = 5,
-            Name = "Status Sample",
-            Type = "Blood",
-            Origin = "Clinic 1",
-            Status = SampleStatus.Submitted,
-            SubmittedById = 1,
-            CreatedAt = DateTime.UtcNow
-        };
+        var sample = SeedSample("Status Sample", "Blood", "Clinic 1");
+        var component = new SampleComponent(_context, _validator);
 
-        _sampleRepository.Setup(r => r.GetByIdAsync(5)).ReturnsAsync(sample);
-        _unitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-
-        var component = new SampleComponent(_unitOfWork.Object, _validator);
-        var result = await component.UpdateStatusAsync(5, SampleStatus.Completed);
+        var result = await component.UpdateStatusAsync(sample.Id, SampleStatus.Completed);
 
         result.Should().NotBeNull();
         result!.Status.Should().Be(SampleStatus.Completed);
         sample.Status.Should().Be(SampleStatus.Completed);
-        _sampleRepository.Verify(r => r.Update(sample), Times.Once);
     }
 
     [Fact]
     public async Task UpdateStatusAsync_MissingSample_ReturnsNull()
     {
-        _sampleRepository.Setup(r => r.GetByIdAsync(404)).ReturnsAsync((Sample?)null);
-
-        var component = new SampleComponent(_unitOfWork.Object, _validator);
+        var component = new SampleComponent(_context, _validator);
         var result = await component.UpdateStatusAsync(404, SampleStatus.Rejected);
 
         result.Should().BeNull();
-        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        (await _context.Samples.CountAsync()).Should().Be(0);
+    }
+
+    private User SeedUser()
+    {
+        var user = new User
+        {
+            Email = "scientist@lab.test",
+            PasswordHash = "hash",
+            FullName = "Test User",
+            Role = UserRole.Scientist,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.Users.Add(user);
+        _context.SaveChanges();
+        return user;
+    }
+
+    private Sample SeedSample(string name, string type, string origin)
+    {
+        var user = SeedUser();
+        var sample = new Sample
+        {
+            Name = name,
+            Type = type,
+            Origin = origin,
+            Status = SampleStatus.Submitted,
+            SubmittedById = user.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.Samples.Add(sample);
+        _context.SaveChanges();
+        return sample;
+    }
+
+    public void Dispose()
+    {
+        _context.Dispose();
+        _connection.Dispose();
     }
 }

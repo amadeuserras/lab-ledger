@@ -8,9 +8,7 @@ using LabLedger.Application.Features.Auth;
 using LabLedger.Application.Features.Results;
 using LabLedger.Application.Features.Samples;
 using LabLedger.Application.Features.Tests;
-using LabLedger.Core.Interfaces;
 using LabLedger.DataModel;
-using LabLedger.DataModel.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -23,7 +21,6 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<LabLedgerDbContext>(options =>
     options.UseSqlite(connectionString));
 
-builder.Services.AddScoped<IUnitOfWork, EFUnitOfWork>();
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.AddScoped<IAuthComponent, AuthComponent>();
 builder.Services.AddScoped<ISampleComponent, SampleComponent>();

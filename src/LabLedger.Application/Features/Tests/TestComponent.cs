@@ -1,5 +1,5 @@
 using FluentValidation;
-using LabLedger.Core.Interfaces;
+using LabLedger.DataModel;
 using LabLedger.DataModel.Entities;
 using Mapster;
 
@@ -7,12 +7,12 @@ namespace LabLedger.Application.Features.Tests;
 
 public class TestComponent : ITestComponent
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly LabLedgerDbContext _context;
     private readonly IValidator<CreateTestRequest> _validator;
 
-    public TestComponent(IUnitOfWork unitOfWork, IValidator<CreateTestRequest> validator)
+    public TestComponent(LabLedgerDbContext context, IValidator<CreateTestRequest> validator)
     {
-        _unitOfWork = unitOfWork;
+        _context = context;
         _validator = validator;
     }
 
@@ -23,7 +23,7 @@ public class TestComponent : ITestComponent
     {
         await _validator.ValidateAndThrowAsync(request, cancellationToken);
 
-        var sample = await _unitOfWork.GetRepository<Sample>().GetByIdAsync(sampleId);
+        var sample = await _context.Samples.FindAsync([sampleId], cancellationToken);
         if (sample is null)
             return null;
 
@@ -35,8 +35,8 @@ public class TestComponent : ITestComponent
             CreatedAt = DateTime.UtcNow
         };
 
-        await _unitOfWork.GetRepository<Test>().AddAsync(test);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        _context.Tests.Add(test);
+        await _context.SaveChangesAsync(cancellationToken);
 
         return test.Adapt<TestDto>();
     }
@@ -46,18 +46,16 @@ public class TestComponent : ITestComponent
         AssignTestRequest request,
         CancellationToken cancellationToken = default)
     {
-        var repo = _unitOfWork.GetRepository<Test>();
-        var test = await repo.GetByIdAsync(testId);
+        var test = await _context.Tests.FindAsync([testId], cancellationToken);
         if (test is null)
             return null;
 
-        var user = await _unitOfWork.GetRepository<User>().GetByIdAsync(request.AssignedToId);
+        var user = await _context.Users.FindAsync([request.AssignedToId], cancellationToken);
         if (user is null)
             throw new InvalidOperationException("Assigned user not found.");
 
         test.AssignedToId = request.AssignedToId;
-        repo.Update(test);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
 
         return test.Adapt<TestDto>();
     }
@@ -67,14 +65,12 @@ public class TestComponent : ITestComponent
         TestStatus status,
         CancellationToken cancellationToken = default)
     {
-        var repo = _unitOfWork.GetRepository<Test>();
-        var test = await repo.GetByIdAsync(testId);
+        var test = await _context.Tests.FindAsync([testId], cancellationToken);
         if (test is null)
             return null;
 
         test.Status = status;
-        repo.Update(test);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
 
         return test.Adapt<TestDto>();
     }

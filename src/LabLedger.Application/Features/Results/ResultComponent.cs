@@ -1,5 +1,5 @@
 using FluentValidation;
-using LabLedger.Core.Interfaces;
+using LabLedger.DataModel;
 using LabLedger.DataModel.Entities;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
@@ -8,18 +8,18 @@ namespace LabLedger.Application.Features.Results;
 
 public class ResultComponent : IResultComponent
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly LabLedgerDbContext _context;
     private readonly IValidator<CreateResultRequest> _validator;
 
-    public ResultComponent(IUnitOfWork unitOfWork, IValidator<CreateResultRequest> validator)
+    public ResultComponent(LabLedgerDbContext context, IValidator<CreateResultRequest> validator)
     {
-        _unitOfWork = unitOfWork;
+        _context = context;
         _validator = validator;
     }
 
     public async Task<ResultDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        var result = await _unitOfWork.GetRepository<Result>().GetByIdAsync(id);
+        var result = await _context.Results.FindAsync([id], cancellationToken);
         return result?.Adapt<ResultDto>();
     }
 
@@ -31,12 +31,11 @@ public class ResultComponent : IResultComponent
     {
         await _validator.ValidateAndThrowAsync(request, cancellationToken);
 
-        var test = await _unitOfWork.GetRepository<Test>().GetByIdAsync(testId);
+        var test = await _context.Tests.FindAsync([testId], cancellationToken);
         if (test is null)
             return null;
 
-        var resultQuery = _unitOfWork.GetRepository<Result>().Query();
-        bool testHasResult = await resultQuery.AnyAsync(r => r.TestId == testId, cancellationToken);
+        bool testHasResult = await _context.Results.AnyAsync(r => r.TestId == testId, cancellationToken);
         if (testHasResult)
             throw new InvalidOperationException("This test already has a result.");
 
@@ -51,8 +50,8 @@ public class ResultComponent : IResultComponent
             CreatedAt = DateTime.UtcNow
         };
 
-        await _unitOfWork.GetRepository<Result>().AddAsync(result);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        _context.Results.Add(result);
+        await _context.SaveChangesAsync(cancellationToken);
 
         return result.Adapt<ResultDto>();
     }
@@ -62,8 +61,7 @@ public class ResultComponent : IResultComponent
         int publishedById,
         CancellationToken cancellationToken = default)
     {
-        var repo = _unitOfWork.GetRepository<Result>();
-        var result = await repo.GetByIdAsync(id);
+        var result = await _context.Results.FindAsync([id], cancellationToken);
         if (result is null)
             return null;
 
@@ -73,8 +71,7 @@ public class ResultComponent : IResultComponent
         result.IsPublished = true;
         result.PublishedById = publishedById;
         result.PublishedAt = DateTime.UtcNow;
-        repo.Update(result);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
 
         return result.Adapt<ResultDto>();
     }

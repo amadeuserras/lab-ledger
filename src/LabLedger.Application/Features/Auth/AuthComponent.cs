@@ -1,22 +1,22 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using LabLedger.Core.Interfaces;
+using LabLedger.DataModel;
 using LabLedger.DataModel.Entities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.EntityFrameworkCore;
 
 namespace LabLedger.Application.Features.Auth;
 
 public class AuthComponent : IAuthComponent
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly LabLedgerDbContext _context;
     private readonly JwtSettings _jwtSettings;
 
-    public AuthComponent(IUnitOfWork unitOfWork, IOptions<JwtSettings> jwtSettings)
+    public AuthComponent(LabLedgerDbContext context, IOptions<JwtSettings> jwtSettings)
     {
-        _unitOfWork = unitOfWork;
+        _context = context;
         _jwtSettings = jwtSettings.Value;
     }
 
@@ -24,10 +24,8 @@ public class AuthComponent : IAuthComponent
         RegisterRequest request,
         CancellationToken cancellationToken = default)
     {
-        var userRepo = _unitOfWork.GetRepository<User>();
-        var query = userRepo.Query();
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
-        bool emailExists = await query.AnyAsync(u => u.Email == normalizedEmail, cancellationToken);
+        bool emailExists = await _context.Users.AnyAsync(u => u.Email == normalizedEmail, cancellationToken);
 
         if (emailExists)
             throw new InvalidOperationException("A user with this email already exists.");
@@ -40,9 +38,9 @@ public class AuthComponent : IAuthComponent
             Role = UserRole.Scientist,
             CreatedAt = DateTime.UtcNow
         };
-            
-        await userRepo.AddAsync(user);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync(cancellationToken);
 
         return new RegisterResponse(user.Id, user.Email, user.FullName, user.Role.ToString());
     }
@@ -51,10 +49,8 @@ public class AuthComponent : IAuthComponent
         LoginRequest request,
         CancellationToken cancellationToken = default)
     {
-        var userRepo = _unitOfWork.GetRepository<User>();
-        var query = userRepo.Query();
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
-        var user = await query.SingleOrDefaultAsync(u => u.Email == normalizedEmail, cancellationToken);
+        var user = await _context.Users.SingleOrDefaultAsync(u => u.Email == normalizedEmail, cancellationToken);
 
         if (user is null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             return null;

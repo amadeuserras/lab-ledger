@@ -93,7 +93,7 @@ This project has **31 automated tests** (unit + integration).
 | API docs          | Swagger / Swashbuckle 6.6.2                                              |
 | Mapping           | Mapster 10.0.7                                                           |
 | Password hashing  | BCrypt.Net-Next 4.2.0                                                    |
-| Testing           | xUnit 2.5.3, FluentAssertions 8.2.0, Moq 4.20.72                         |
+| Testing           | xUnit 2.5.3, FluentAssertions 8.2.0                                      |
 | Test hosting      | `Microsoft.AspNetCore.Mvc.Testing` 8.0.11                                |
 | Coverage          | `coverlet.collector` 6.0.0                                               |
 
@@ -104,7 +104,6 @@ This project has **31 automated tests** (unit + integration).
 | `LabLedger.sln`             | Main solution file              |
 | `src/LabLedger.Api`         | The web API (the thing you run) |
 | `src/LabLedger.Application` | Application logic               |
-| `src/LabLedger.Core`        | Core domain interfaces          |
 | `src/LabLedger.DataModel`   | Database model + migrations     |
 | `tests/LabLedger.Tests`     | Automated tests                 |
 

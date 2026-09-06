@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\LabLedger.Core\LabLedger.Core.csproj" />
     <ProjectReference Include="..\LabLedger.DataModel\LabLedger.DataModel.csproj" />
   </ItemGroup>
 
