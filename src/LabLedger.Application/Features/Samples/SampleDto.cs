@@ -9,6 +9,7 @@ public record SampleDto(
     string Origin,
     SampleStatus Status,
     int SubmittedById,
+    string SubmittedByFullName,
     DateTime CreatedAt);
 
 public record UpdateSampleStatusRequest(SampleStatus Status);
