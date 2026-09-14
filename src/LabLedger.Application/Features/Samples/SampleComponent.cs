@@ -49,6 +49,7 @@ public class SampleComponent : ISampleComponent
         CancellationToken cancellationToken = default)
     {
         await _validator.ValidateAndThrowAsync(request, cancellationToken);
+        var user = await _context.Users.FindAsync([submittedById], cancellationToken);
 
         var sample = new Sample
         {
@@ -63,6 +64,7 @@ public class SampleComponent : ISampleComponent
         _context.Samples.Add(sample);
         await _context.SaveChangesAsync(cancellationToken);
 
+        sample.SubmittedBy = user;
         return sample.Adapt<SampleDto>();
     }
 
