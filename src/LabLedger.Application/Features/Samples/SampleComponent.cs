@@ -24,22 +24,21 @@ public class SampleComponent : ISampleComponent
         if (status is not null)
             query = query.Where(s => s.Status == status);
 
-        query = query.
-            Include(s => s.SubmittedBy)
-            .AsNoTracking();
+        var samples = await query
+            .Include(s => s.SubmittedBy)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
 
-        var samples = await query.ToListAsync(cancellationToken);
         return samples.Adapt<List<SampleDto>>();
     }
 
     public async Task<SampleDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        IQueryable<Sample> query = _context.Samples;
-        query = query.
-            Include(s => s.SubmittedBy)
-            .AsNoTracking();
+        var sample = await _context.Samples
+            .Include(s => s.SubmittedBy)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
 
-        var sample = await query.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
         return sample.Adapt<SampleDto>();
     }
 
