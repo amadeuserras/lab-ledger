@@ -73,7 +73,10 @@ public class SampleComponent : ISampleComponent
         SampleStatus status,
         CancellationToken cancellationToken = default)
     {
-        var sample = await _context.Samples.FindAsync([id], cancellationToken);
+        var sample = await _context.Samples
+            .Include(s => s.SubmittedBy)
+            .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+
         if (sample is null)
             return null;
 
