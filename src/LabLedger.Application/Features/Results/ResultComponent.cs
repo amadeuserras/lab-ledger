@@ -19,7 +19,10 @@ public class ResultComponent : IResultComponent
 
     public async Task<ResultDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        var result = await _context.Results.FindAsync([id], cancellationToken);
+        var result = await _context.Results
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+            
         return result?.Adapt<ResultDto>();
     }
 
