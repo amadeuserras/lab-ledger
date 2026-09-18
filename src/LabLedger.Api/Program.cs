@@ -2,8 +2,6 @@ using System.Text;
 using FluentValidation;
 using LabLedger.Api.Authorization;
 using LabLedger.Api.Exceptions;
-using LabLedger.Api.GraphQL;
-using LabLedger.Api.GraphQL.DataLoaders;
 using LabLedger.Application.Features.Auth;
 using LabLedger.Application.Features.Results;
 using LabLedger.Application.Features.Samples;
@@ -63,18 +61,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services
-    .AddGraphQLServer()
-    .AddQueryType<Query>()
-    .AddType<SampleType>()
-    .AddType<TestType>()
-    .AddType<ResultType>()
-    .AddType<UserType>()
-    .AddDataLoader<TestsBySampleIdDataLoader>()
-    .AddAuthorization()
-    .ModifyRequestOptions(options =>
-        options.IncludeExceptionDetails = builder.Environment.IsDevelopment());
-
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -90,6 +76,5 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapGraphQL();
 
 app.Run();

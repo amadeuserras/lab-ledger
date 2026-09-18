@@ -29,11 +29,6 @@ If you’ve ever had sample info spread across emails, spreadsheets, and sticky 
 
 ## Endpoints
 
-Lab Ledger offers the same data in two ways:
-
-- **REST API**: regular HTTP endpoints like `GET /api/samples`
-- **GraphQL**: available at `/graphql`, powered by **GraphQL** + **Hot Chocolate**
-
 Most endpoints require you to be logged in. You log in once, then send the token with each request like so: `Authorization: Bearer <your-token>`
 
 - Register a user: `POST /api/auth/register`
@@ -49,34 +44,12 @@ Most endpoints require you to be logged in. You log in once, then send the token
 - View a result: `GET /api/results/{id}`
 - Publish a result: `PATCH /api/results/{id}/publish`
 
-### GraphQL
-
-GraphQL is available at:
-
-- `POST /graphql`
-
-In development, Hot Chocolate also provides a browser UI at:
-
-- `GET /graphql`
-
-Example: query samples (optionally filter by status):
-
-```graphql
-query {
-  samples(status: Submitted) {
-    id
-    name
-    status
-  }
-}
-```
-
 ## Tests
 
-This project has **31 automated tests** (unit + integration).
+This project has **28 automated tests** (unit + integration).
 
-- **How integration tests work**: the API is spun up in-memory using `Microsoft.AspNetCore.Mvc.Testing`, then tests call the real HTTP endpoints (and GraphQL) like a client would.
-- **What’s covered**: authentication (`/api/auth/*`), samples (`/api/samples/*`), tests + results (`/api/tests/*`, `/api/results/*`), GraphQL samples queries (`/graphql`), and global error handling.
+- **How integration tests work**: the API is spun up in-memory using `Microsoft.AspNetCore.Mvc.Testing`, then tests call the real HTTP endpoints like a client would.
+- **What’s covered**: authentication (`/api/auth/*`), samples (`/api/samples/*`), tests + results (`/api/tests/*`, `/api/results/*`), and global error handling.
 - **Coverage**: code coverage is collected with Coverlet.
 
 ## Tech stack
@@ -88,7 +61,6 @@ This project has **31 automated tests** (unit + integration).
 | Auth              | JWT Bearer auth (`Microsoft.AspNetCore.Authentication.JwtBearer` 8.0.11) |
 | Database          | SQLite                                                                   |
 | ORM / data access | Entity Framework Core (`Microsoft.EntityFrameworkCore.Sqlite` 8.0.11)    |
-| GraphQL           | Hot Chocolate 16.0.9                                                     |
 | Validation        | FluentValidation (API: 11.3.1, Application: 12.1.1)                      |
 | API docs          | Swagger / Swashbuckle 6.6.2                                              |
 | Mapping           | Mapster 10.0.7                                                           |
@@ -140,13 +112,6 @@ dotnet run --project src/LabLedger.Api
 Once the API is running, open:
 
 - `http://localhost:5143/swagger`
-
-### Visit GraphQL
-
-Hot Chocolate GraphQL endpoint + dev UI:
-
-- `POST /graphql`
-- `GET /graphql`
 
 ### Run the tests
 
